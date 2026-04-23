@@ -1,0 +1,42 @@
+{
+  "filters": {
+    "documents_q1_2026": {
+      "active": true,
+      "schema": {
+        "include": "^(bra|bsp|rca|ref)$"
+      },
+      "root": {
+        "include": "^doc_.*$"
+      },
+      "filter": "root.tofk in ('6000','1800','6200','4800','9500') and root.document_date >= '2026-01-01' and root.document_date < '2026-04-01'"
+    },
+    "all_dictionaries": {
+      "active": true,
+      "schema": {
+        "include": "^(bra|bsp|rca|ref)$"
+      },
+      "root": {
+        "include": "^dict_.*$"
+      },
+      "filter": "true"
+    }
+  },
+  "select": {
+    "default": {
+      "lookahead": 100,
+      "limit": 250
+    },
+    "bsp.doc_d_016": {
+      "lookahead": 50
+    },
+    "bsp.doc_d_019": {
+      "lookahead": 50
+    }
+  },
+  "insert": {
+    "attempts": 3,
+    "split": true,
+    "correct_bogus_ids": true,
+    "skip_obsolete_dictionaries": true
+  }
+}

@@ -1,0 +1,98 @@
+services:
+  pg_src:
+    image: postgres:16
+    container_name: pg_src
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_src_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo -d demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  pg_dst:
+    image: postgres:16
+    container_name: pg_dst
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg_dst_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo -d demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # One-shot: creates SAME schema/tables in BOTH pg_src and pg_dst,
+  # then seeds ONLY pg_src with demo data.
+  data_gen:
+    build:
+      context: data_gen
+    container_name: data_gen
+    environment:
+      # Source (seed data here)
+      SRC_PGHOST: pg_src
+      SRC_PGPORT: "5432"
+      SRC_PGDATABASE: demo
+      SRC_PGUSER: demo
+      SRC_PGPASSWORD: demo
+
+      # Target (DDL only)
+      DST_PGHOST: pg_dst
+      DST_PGPORT: "5432"
+      DST_PGDATABASE: demo
+      DST_PGUSER: demo
+      DST_PGPASSWORD: demo
+
+      ROWS_PER_DOC_TABLE: "200"
+      MAX_LINKS_PER_DOC: "3"
+    depends_on:
+      pg_src:
+        condition: service_healthy
+      pg_dst:
+        condition: service_healthy
+    restart: "no"
+
+  nifi:
+    image: apache/nifi:1.28.1
+    container_name: nifi
+    ports:
+      - "8080:8080"
+    environment:
+      NIFI_WEB_HTTP_PORT: "8080"
+      SINGLE_USER_CREDENTIALS_USERNAME: admin
+      SINGLE_USER_CREDENTIALS_PASSWORD: adminadminadmin
+      NIFI_JVM_HEAP_INIT: 1g
+      NIFI_JVM_HEAP_MAX: 2g
+    volumes:
+      # Put your postgresql JDBC jar here on the host
+      - ./drivers:/opt/nifi/nifi-current/drivers
+      - nifi_state:/opt/nifi/nifi-current/state
+      - nifi_db:/opt/nifi/nifi-current/database_repository
+      - nifi_flowfile:/opt/nifi/nifi-current/flowfile_repository
+      - nifi_content:/opt/nifi/nifi-current/content_repository
+      - nifi_prov:/opt/nifi/nifi-current/provenance_repository
+    depends_on:
+      pg_src:
+        condition: service_healthy
+      pg_dst:
+        condition: service_healthy
+
+volumes:
+  pg_src_data:
+  pg_dst_data:
+  nifi_state:
+  nifi_db:
+  nifi_flowfile:
+  nifi_content:
+  nifi_prov:
