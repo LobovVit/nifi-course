@@ -13,7 +13,7 @@ STEP_1
 - Запуск простого процесса
 - LogAttribute
 - процесс чуть сложнее - Split
-STEP_2 
+STEP_2  (детальная инструкция - https://confluence.otr.ru/pages/viewpage.action?pageId=318868851)
 - Registry
 - Импорт готового через Registry
 - Конфигурирование импортированного
